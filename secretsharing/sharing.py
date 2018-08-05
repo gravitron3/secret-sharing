@@ -105,22 +105,30 @@ class SecretSharer():
 
     def __init__(self):
         pass
-
+    
     @classmethod
-    def split_secret(cls, secret_string, share_threshold, num_shares):
-        secret_int = charset_to_int(secret_string, cls.secret_charset)
-        points = secret_int_to_points(secret_int, share_threshold, num_shares)
+    def split_secret_get_shares_and_modulus(cls, secret_string, share_threshold, num_shares):
+	secret_int = charset_to_int(secret_string, cls.secret_charset)
+	prime = get_large_enough_prime([secret_int, num_shares])
+        points = secret_int_to_points(secret_int, share_threshold, num_shares, prime)
         shares = []
         for point in points:
             shares.append(point_to_share_string(point, cls.share_charset))
-        return shares
+        return (shares, prime)
 
     @classmethod
-    def recover_secret(cls, shares):
+    def split_secret(cls, secret_string, share_threshold, num_shares):
+	#simply return what split_secret_get_shares_and_modulus would return but drop the modulus
+        return cls.split_secret_get_shares_and_modulus(secret_string, share_threshold, num_shares)[0]
+
+    @classmethod
+    def recover_secret(cls, shares, prime = None):
+        if not prime:
+	        warnings.warn("Trying to recover secret without knowing the modulus! This might fail!")
         points = []
         for share in shares:
             points.append(share_string_to_point(share, cls.share_charset))
-        secret_int = points_to_secret_int(points)
+        secret_int = points_to_secret_int(points, prime)
         secret_string = int_to_charset(secret_int, cls.secret_charset)
         return secret_string
 
