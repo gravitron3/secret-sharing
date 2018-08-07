@@ -8,6 +8,7 @@
 """
 
 import string
+import warnings
 
 from six import integer_types
 from utilitybelt import int_to_charset, charset_to_int, base58_chars, \
